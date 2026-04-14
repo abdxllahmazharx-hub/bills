@@ -1,39 +1,96 @@
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel | #1 Archive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 font-sans p-6">
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAM4U2SUGBzq4IyWSITtmzu8ZnyrXOfFVk",
-        authDomain: "assembly-bills.firebaseapp.com",
-        projectId: "assembly-bills",
-        storageBucket: "assembly-bills.firebasestorage.app",
-        messagingSenderId: "1038506635093",
-        appId: "1:1038506635093:web:0fed6de4cd8dd6702d49dc"
-    };
+    <div class="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-2xl border border-slate-200 mt-10">
+        <h2 class="text-2xl font-black text-emerald-950 mb-6 flex items-center gap-2">
+            <span class="bg-emerald-900 text-white px-2 py-1 rounded-lg text-sm">#1</span> 
+            Admin Portal
+        </h2>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+        <div class="space-y-4">
+            <input type="text" id="bid" placeholder="Bill ID (e.g. ACT I 2026)" class="w-full p-4 bg-slate-50 border rounded-xl outline-none focus:border-emerald-600">
+            <input type="text" id="btitle" placeholder="Official Title" class="w-full p-4 bg-slate-50 border rounded-xl outline-none focus:border-emerald-600">
+            <input type="text" id="byear" placeholder="Year (e.g. 2026)" class="w-full p-4 bg-slate-50 border rounded-xl outline-none focus:border-emerald-600">
+            <input type="text" id="bcat" placeholder="Category (e.g. Legal)" class="w-full p-4 bg-slate-50 border rounded-xl outline-none focus:border-emerald-600">
+            
+            <textarea id="bsum" placeholder="Summary (Plain Language)" class="w-full p-4 bg-slate-50 border rounded-xl outline-none h-24 focus:border-emerald-600"></textarea>
+            <textarea id="bimp" placeholder="Public Impact" class="w-full p-4 bg-slate-50 border rounded-xl outline-none h-20 focus:border-emerald-600"></textarea>
 
-    window.uploadBill = async () => {
-        const docData = {
-            id: document.getElementById('bid').value,
-            title: document.getElementById('btitle').value,
-            summary: document.getElementById('bsum').value,
-            impact: document.getElementById('bimp').value,
-            year: document.getElementById('byear').value,
-            cat: document.getElementById('bcat').value
+            <button id="uploadBtn" class="w-full bg-emerald-900 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-emerald-800 active:scale-95 transition-all">
+                UPLOAD LIVE
+            </button>
+        </div>
+        
+        <p id="statusMsg" class="mt-4 text-center text-xs font-bold uppercase tracking-widest"></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAM4U2SUGBzq4IyWSITtmzu8ZnyrXOfFVk",
+            authDomain: "assembly-bills.firebaseapp.com",
+            projectId: "assembly-bills",
+            storageBucket: "assembly-bills.firebasestorage.app",
+            messagingSenderId: "1038506635093",
+            appId: "1:1038506635093:web:0fed6de4cd8dd6702d49dc"
         };
-        await addDoc(collection(db, "punjab_bills"), docData);
-        alert("Bill Added to Firestore!");
-    }
-</script>
-<div style="font-family: sans-serif; max-width: 400px; margin: 50px auto; display: flex; flex-direction: column; gap: 10px;">
-    <h2>Add Bill to #1 Archive</h2>
-    <input id="bid" placeholder="ID (ACT X 2024)">
-    <input id="btitle" placeholder="Official Title">
-    <input id="byear" placeholder="Year">
-    <input id="bcat" placeholder="Category (Legal/Social)">
-    <textarea id="bsum" placeholder="Summary"></textarea>
-    <textarea id="bimp" placeholder="Public Impact"></textarea>
-    <button onclick="uploadBill()" style="background: #064e3b; color: white; padding: 10px; border: none; cursor: pointer;">UPLOAD LIVE</button>
-</div>
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const btn = document.getElementById('uploadBtn');
+        const status = document.getElementById('statusMsg');
+
+        btn.addEventListener('click', async () => {
+            // Get data from inputs
+            const billData = {
+                id: document.getElementById('bid').value,
+                title: document.getElementById('btitle').value,
+                summary: document.getElementById('bsum').value,
+                impact: document.getElementById('bimp').value,
+                year: document.getElementById('byear').value,
+                cat: document.getElementById('bcat').value
+            };
+
+            // Check if fields are empty
+            if (!billData.id || !billData.title) {
+                alert("Please fill the ID and Title at least!");
+                return;
+            }
+
+            btn.innerText = "COMMUNICATING WITH FIREBASE...";
+            btn.disabled = true;
+
+            try {
+                // This actually waits for Firestore to confirm
+                await addDoc(collection(db, "punjab_bills"), billData);
+                
+                // If it reaches here, it IS actually uploaded
+                status.innerText = "SUCCESS: UPLOADED TO LIVE SITE!";
+                status.className = "mt-4 text-center text-xs font-bold uppercase tracking-widest text-emerald-600";
+                
+                // Clear the form for the next one
+                document.querySelectorAll('input, textarea').forEach(el => el.value = "");
+                
+            } catch (error) {
+                // If it fails (no internet, bad rules), this runs
+                console.error(error);
+                status.innerText = "FAILED: CHECK INTERNET OR RULES!";
+                status.className = "mt-4 text-center text-xs font-bold uppercase tracking-widest text-red-600";
+                alert("Actual Upload Failed! Error: " + error.message);
+            } finally {
+                btn.innerText = "UPLOAD LIVE";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
