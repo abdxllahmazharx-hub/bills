@@ -2,102 +2,140 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bulk Injector</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punjab Legislative Archive | #1 Reference</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .bill-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bill-card:hover { transform: translateY(-5px); border-color: #059669; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-bottom: 3px solid #064e3b; }
+        .pulse { animation: pulse-animation 2s infinite; }
+        @keyframes pulse-animation { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
 </head>
-<body class="bg-slate-900 flex items-center justify-center h-screen font-sans">
+<body class="text-slate-900">
 
-    <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-lg">
-        <h1 class="text-3xl font-black text-slate-900 mb-2">Mass Data Injector</h1>
-        <p class="text-slate-500 mb-8 font-semibold">Ready to upload 30+ real Punjab Acts to Firestore.</p>
-        
-        <button id="injectBtn" class="bg-red-600 text-white font-black text-xl py-6 px-10 rounded-2xl shadow-red-500/50 shadow-xl hover:bg-red-500 active:scale-95 transition-all w-full">
-            INJECT DATA NOW
-        </button>
-        <p id="status" class="mt-6 text-sm font-bold text-slate-400 uppercase tracking-widest"></p>
+<header class="glass sticky top-0 z-50 px-6 py-4 shadow-lg">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <div class="h-12 w-12 bg-emerald-900 rounded-xl flex items-center justify-center text-white font-black shadow-lg">#1</div>
+            <div>
+                <h1 class="text-2xl font-black text-emerald-950 tracking-tighter uppercase">Punjab Law Archive</h1>
+                <div class="flex items-center gap-2">
+                    <div class="h-2 w-2 bg-emerald-500 rounded-full pulse"></div>
+                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Live Provincial Records 2021-2026</p>
+                </div>
+            </div>
+        </div>
+        <div class="text-right hidden md:block">
+            <p class="text-[10px] font-black text-slate-400 uppercase italic">Official Reference Portal</p>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-12">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
+        <div class="lg:col-span-3 bg-white p-6 rounded-3xl shadow-xl border border-slate-200 flex flex-col md:flex-row gap-4">
+            <input type="text" id="searchInput" placeholder="Search by Keyword (e.g. 'Women', 'Tax', 'Land')..." 
+                class="flex-1 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 outline-none font-semibold transition-all">
+            <select id="yearFilter" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-slate-600 outline-none cursor-pointer hover:bg-slate-100">
+                <option value="All">All Years</option>
+                <option>2026</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option>
+            </select>
+        </div>
+        <div class="bg-emerald-900 rounded-3xl p-6 text-white flex items-center justify-between shadow-xl">
+            <div>
+                <p class="text-[10px] font-bold uppercase tracking-widest opacity-60">Verified Laws</p>
+                <span id="billCount" class="text-5xl font-black">0</span>
+            </div>
+            <div class="h-12 w-12 bg-white/10 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+        </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <div id="billsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        </div>
+</main>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAM4U2SUGBzq4IyWSITtmzu8ZnyrXOfFVk",
-            authDomain: "assembly-bills.firebaseapp.com",
-            projectId: "assembly-bills",
-            storageBucket: "assembly-bills.firebasestorage.app",
-            messagingSenderId: "1038506635093",
-            appId: "1:1038506635093:web:0fed6de4cd8dd6702d49dc"
-        };
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const firebaseConfig = {
+        apiKey: "AIzaSyAM4U2SUGBzq4IyWSITtmzu8ZnyrXOfFVk",
+        authDomain: "assembly-bills.firebaseapp.com",
+        projectId: "assembly-bills",
+        storageBucket: "assembly-bills.firebasestorage.app",
+        messagingSenderId: "1038506635093",
+        appId: "1:1038506635093:web:0fed6de4cd8dd6702d49dc"
+    };
 
-        // REAL PUNJAB ASSEMBLY BILLS DATA
-        const realBills = [
-            { id: "ACT XXI OF 2024", title: "The Punjab Defamation Act, 2024", summary: "Provides protection against defamation and fake news on digital and traditional platforms.", impact: "Establishes special tribunals to resolve cases within 180 days with heavy fines.", year: "2024", cat: "Legal" },
-            { id: "ACT I OF 2024", title: "The Punjab Finance Act, 2024", summary: "Levies, alters, and rationalizes provincial taxes, duties, and fees for the fiscal year.", impact: "Updates tax brackets for property, agriculture, and services.", year: "2024", cat: "Finance" },
-            { id: "ACT XXIII OF 2024", title: "Punjab Price Control of Essential Commodities Act", summary: "Establishes a council and price control officers to monitor and regulate the prices of essential goods.", impact: "Strict penalties for hoarding and artificial inflation in markets.", year: "2024", cat: "Social" },
-            { id: "ACT III OF 2023", title: "The Punjab Local Government Act, 2022", summary: "Reconstitutes local governments in Punjab to devolve political, administrative, and financial responsibility.", impact: "Empowers local mayors and union councils for direct community governance.", year: "2023", cat: "Legal" },
-            { id: "ACT I OF 2023", title: "Punjab Free and Compulsory Education (Amendment) Act", summary: "Ensures stricter compliance for providing free education to children aged 5 to 16.", impact: "Mandates private schools to allocate a specific quota for underprivileged students.", year: "2023", cat: "Social" },
-            { id: "ACT X OF 2022", title: "The Ravi Urban Development Authority (Amendment) Act", summary: "Expands the jurisdiction and powers of RUDA to acquire land and develop the new riverfront city.", impact: "Accelerates infrastructure development near the Ravi River basin.", year: "2022", cat: "Finance" },
-            { id: "ACT XV OF 2022", title: "Punjab Protection of Women against Violence (Amendment)", summary: "Strengthens the framework for protecting women from domestic, psychological, and economic abuse.", impact: "Creates more accessible protection centers and faster response protocols.", year: "2022", cat: "Health" },
-            { id: "ACT VI OF 2022", title: "The Punjab Ehsaas Programme Act, 2022", summary: "Provides a statutory framework for poverty alleviation and social safety net programs.", impact: "Ensures continuous funding for soup kitchens and cash handouts for the ultra-poor.", year: "2022", cat: "Social" },
-            { id: "ACT XXX OF 2021", title: "The Punjab Transparency and Right to Information (Amendment)", summary: "Updates the RTI act to include more government departments and digitize public record requests.", impact: "Increases governmental transparency and citizen access to official data.", year: "2021", cat: "Legal" },
-            { id: "ACT V OF 2021", title: "The Punjab Infectious Diseases (Prevention and Control) Act", summary: "Grants emergency powers to health departments to enforce lockdowns, quarantines, and medical checks.", impact: "Created the legal basis for government responses to pandemics like COVID-19.", year: "2021", cat: "Health" },
-            { id: "ACT XII OF 2024", title: "Punjab Agricultural Income Tax (Amendment) Act", summary: "Adjusts the exemption thresholds and tax rates for high-earning agricultural land owners.", impact: "Increases provincial revenue from large-scale farming estates.", year: "2024", cat: "Finance" },
-            { id: "ACT IX OF 2023", title: "The Punjab Healthcare Commission (Amendment) Act", summary: "Increases the regulatory powers of the commission against quackery and illegal clinics.", impact: "Hospitals and clinics face stricter audits and heavier fines for malpractice.", year: "2023", cat: "Health" },
-            { id: "ACT II OF 2021", title: "The Sugar Factories (Control) (Amendment) Act", summary: "Mandates sugar mills to pay farmers within a strict timeline and start crushing on government-ordered dates.", impact: "Protects sugarcane farmers from delayed payments and exploitation by mill owners.", year: "2021", cat: "Finance" },
-            { id: "ACT VIII OF 2022", title: "The Punjab Water Act", summary: "Comprehensive legislation for the conservation, management, and regulation of ground and surface water.", impact: "Introduces licensing for commercial water extraction to stop depletion.", year: "2022", cat: "Social" },
-            { id: "ACT XIV OF 2024", title: "Punjab Enforcement and Regulation Act", summary: "Creates a dedicated enforcement authority to clear encroachments and assist district administration.", impact: "Faster clearance of state land and stricter enforcement of municipal laws.", year: "2024", cat: "Legal" },
-            { id: "ACT XVII OF 2023", title: "The Punjab Animal Health Act", summary: "Regulates animal diseases, transport, and veterinary practices across the province.", impact: "Prevents outbreaks in livestock, protecting the meat and dairy industries.", year: "2023", cat: "Health" },
-            { id: "ACT IV OF 2022", title: "The Punjab Tourism for Economic Growth Act", summary: "Facilitates private sector investment in tourism zones and historical heritage sites.", impact: "Streamlines NOCs and permits for building hotels near tourist destinations.", year: "2022", cat: "Finance" },
-            { id: "ACT XI OF 2021", title: "The Punjab Overseas Pakistanis Commission (Amendment)", summary: "Enhances the powers of the OPC to resolve property disputes for Pakistanis living abroad.", impact: "Faster resolution of land grabbing cases involving overseas citizens.", year: "2021", cat: "Legal" },
-            { id: "ACT VII OF 2023", title: "Punjab Reproductive Healthcare Rights Act", summary: "Guarantees access to reproductive health services, counseling, and maternal care.", impact: "Aims to lower maternal mortality rates in rural Punjab.", year: "2023", cat: "Health" },
-            { id: "ACT XIX OF 2024", title: "The Punjab Board of Revenue (Amendment) Act", summary: "Digitizes land records and centralizes the stamp duty collection system.", impact: "Reduces corruption in the Patwari system through e-registration.", year: "2024", cat: "Finance" },
-            { id: "ACT XXV OF 2022", title: "The Punjab Environmental Protection (Amendment) Act", summary: "Introduces harsher penalties for industrial emissions and burning of crop residue.", impact: "Provides legal backing to combat the annual winter smog in Lahore.", year: "2022", cat: "Health" },
-            { id: "ACT XVI OF 2021", title: "The Punjab Domestic Workers Act", summary: "Recognizes domestic workers as laborers, ensuring minimum wage and working hour limits.", impact: "Provides social security and dispute resolution for house help.", year: "2021", cat: "Social" },
-            { id: "ACT XX OF 2023", title: "The Punjab Forensic Science Agency (Amendment) Act", summary: "Expands the agency's mandate to include digital forensics and cybercrime evidence.", impact: "Speeds up the prosecution of digital fraud and harassment cases.", year: "2023", cat: "Legal" },
-            { id: "ACT XIII OF 2022", title: "The Punjab Charities Act", summary: "Requires all NGOs and charities to register and declare their funding sources.", impact: "Prevents terror-financing and ensures donations go to legitimate causes.", year: "2022", cat: "Finance" },
-            { id: "ACT XXVIII OF 2024", title: "Punjab Control of Narcotics Substances (Amendment)", summary: "Revises the quantities of drugs that dictate sentencing lengths, focusing heavily on synthetic drugs like Ice (Meth).", impact: "Mandatory life sentences for distributors of synthetic narcotics in educational institutions.", year: "2024", cat: "Social" },
-            { id: "ACT IV OF 2021", title: "The Punjab Medical Teaching Institutions (Reforms) Act", summary: "Grants financial and administrative autonomy to major government hospitals.", impact: "Shifts hospital management from bureaucracy to independent boards of governors.", year: "2021", cat: "Health" },
-            { id: "ACT IX OF 2022", title: "The Punjab Apprenticeship Act", summary: "Obligates large industries to train a specific percentage of apprentices based on their workforce.", impact: "Boosts youth employment and technical skill development.", year: "2022", cat: "Social" },
-            { id: "ACT XXII OF 2023", title: "The Punjab Weights and Measures (Amendment) Act", summary: "Digitizes the inspection of fuel pumps and market scales to prevent consumer fraud.", impact: "Ensures accurate petrol dispensing and grocery weighing.", year: "2023", cat: "Legal" },
-            { id: "ACT VI OF 2024", title: "The Punjab Motor Vehicles (Amendment) Act", summary: "Introduces heavy fines for missing fitness certificates and lacking third-party insurance.", impact: "Aims to reduce traffic accidents caused by poorly maintained commercial vehicles.", year: "2024", cat: "Social" },
-            { id: "ACT XIV OF 2021", title: "The Punjab Privatization Board Act", summary: "Establishes a framework to privatize or lease out loss-making government-owned entities.", impact: "Reduces the financial burden on the provincial exchequer.", year: "2021", cat: "Finance" }
-        ];
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let allBills = [];
 
-        const btn = document.getElementById('injectBtn');
-        const status = document.getElementById('status');
+    onSnapshot(collection(db, "punjab_bills"), (snapshot) => {
+        allBills = snapshot.docs.map(doc => doc.data());
+        filterData();
+    });
 
-        btn.addEventListener('click', async () => {
-            btn.innerText = "INJECTING... DO NOT CLOSE";
-            btn.disabled = true;
-            status.innerText = "Connecting to Firestore...";
-            
-            let count = 0;
-            const colRef = collection(db, "punjab_bills");
+    function render(data) {
+        const grid = document.getElementById('billsGrid');
+        document.getElementById('billCount').innerText = data.length;
+        
+        if (data.length === 0) {
+            grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400 font-bold uppercase tracking-widest">No matching records found</div>`;
+            return;
+        }
 
-            for (const bill of realBills) {
-                try {
-                    await addDoc(colRef, bill);
-                    count++;
-                    status.innerText = `Uploaded: ${count} / ${realBills.length}`;
-                    status.className = "mt-6 text-sm font-bold text-yellow-500 uppercase tracking-widest";
-                } catch (e) {
-                    console.error("Error:", e);
-                    alert("Injection stopped. Error: " + e.message);
-                    break;
-                }
-            }
+        grid.innerHTML = data.sort((a,b) => b.year - a.year).map(b => `
+            <div class="bill-card bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="text-[9px] font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-lg">#1 VERIFIED LAW</span>
+                        <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">${b.id}</span>
+                    </div>
+                    <h2 class="text-xl font-black text-slate-900 leading-[1.2] mb-4 hover:text-emerald-900 transition-colors">${b.title}</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Provision Summary</p>
+                            <p class="text-slate-600 text-sm leading-relaxed line-clamp-3">${b.summary}</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <p class="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Public Impact</p>
+                            <p class="text-emerald-950 text-xs font-bold italic">"${b.impact}"</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-black text-slate-400 uppercase">${b.year} Fiscal</span>
+                        <span class="text-xs font-black text-slate-900">${b.cat}</span>
+                    </div>
+                    <button class="bg-slate-900 text-white text-[10px] font-black px-5 py-3 rounded-xl hover:bg-emerald-900 transition-all shadow-md">VIEW DOCUMENT</button>
+                </div>
+            </div>
+        `).join('');
+    }
 
-            if(count === realBills.length) {
-                btn.className = "bg-emerald-600 text-white font-black text-xl py-6 px-10 rounded-2xl shadow-emerald-500/50 shadow-xl w-full";
-                btn.innerText = "SUCCESS! SITE IS LOADED";
-                status.innerText = "ALL BILLS INJECTED. CHECK INDEX.HTML!";
-                status.className = "mt-6 text-sm font-bold text-emerald-500 uppercase tracking-widest";
-            }
+    function filterData() {
+        const s = document.getElementById('searchInput').value.toLowerCase();
+        const y = document.getElementById('yearFilter').value;
+        const results = allBills.filter(b => {
+            const matchS = (b.title?.toLowerCase().includes(s)) || (b.summary?.toLowerCase().includes(s));
+            const matchY = y === "All" || b.year == y;
+            return matchS && matchY;
         });
-    </script>
+        render(results);
+    }
+
+    document.getElementById('searchInput').addEventListener('input', filterData);
+    document.getElementById('yearFilter').addEventListener('change', filterData);
+</script>
 </body>
 </html>
