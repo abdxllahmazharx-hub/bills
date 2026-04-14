@@ -1,0 +1,39 @@
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAM4U2SUGBzq4IyWSITtmzu8ZnyrXOfFVk",
+        authDomain: "assembly-bills.firebaseapp.com",
+        projectId: "assembly-bills",
+        storageBucket: "assembly-bills.firebasestorage.app",
+        messagingSenderId: "1038506635093",
+        appId: "1:1038506635093:web:0fed6de4cd8dd6702d49dc"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.uploadBill = async () => {
+        const docData = {
+            id: document.getElementById('bid').value,
+            title: document.getElementById('btitle').value,
+            summary: document.getElementById('bsum').value,
+            impact: document.getElementById('bimp').value,
+            year: document.getElementById('byear').value,
+            cat: document.getElementById('bcat').value
+        };
+        await addDoc(collection(db, "punjab_bills"), docData);
+        alert("Bill Added to Firestore!");
+    }
+</script>
+<div style="font-family: sans-serif; max-width: 400px; margin: 50px auto; display: flex; flex-direction: column; gap: 10px;">
+    <h2>Add Bill to #1 Archive</h2>
+    <input id="bid" placeholder="ID (ACT X 2024)">
+    <input id="btitle" placeholder="Official Title">
+    <input id="byear" placeholder="Year">
+    <input id="bcat" placeholder="Category (Legal/Social)">
+    <textarea id="bsum" placeholder="Summary"></textarea>
+    <textarea id="bimp" placeholder="Public Impact"></textarea>
+    <button onclick="uploadBill()" style="background: #064e3b; color: white; padding: 10px; border: none; cursor: pointer;">UPLOAD LIVE</button>
+</div>
