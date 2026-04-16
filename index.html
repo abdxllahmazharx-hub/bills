@@ -42,7 +42,12 @@
                 class="flex-1 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 outline-none font-semibold transition-all">
             <select id="yearFilter" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-slate-600 outline-none cursor-pointer hover:bg-slate-100">
                 <option value="All">All Years</option>
-                <option>2026</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
             </select>
         </div>
         <div class="bg-emerald-900 rounded-3xl p-6 text-white flex items-center justify-between shadow-xl">
@@ -58,8 +63,7 @@
         </div>
     </div>
 
-    <div id="billsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        </div>
+    <div id="billsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
 </main>
 
 <script type="module">
@@ -79,8 +83,9 @@
     const db = getFirestore(app);
     let allBills = [];
 
+    // Real-time listener
     onSnapshot(collection(db, "punjab_bills"), (snapshot) => {
-        allBills = snapshot.docs.map(doc => doc.data());
+        allBills = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         filterData();
     });
 
@@ -93,29 +98,29 @@
             return;
         }
 
-        grid.innerHTML = data.sort((a,b) => b.year - a.year).map(b => `
+        grid.innerHTML = data.sort((a,b) => (b.year || 0) - (a.year || 0)).map(b => `
             <div class="bill-card bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm flex flex-col justify-between">
                 <div>
                     <div class="flex justify-between items-start mb-6">
                         <span class="text-[9px] font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-lg">#1 VERIFIED LAW</span>
-                        <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">${b.id}</span>
+                        <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">${b.id || 'N/A'}</span>
                     </div>
-                    <h2 class="text-xl font-black text-slate-900 leading-[1.2] mb-4 hover:text-emerald-900 transition-colors">${b.title}</h2>
+                    <h2 class="text-xl font-black text-slate-900 leading-[1.2] mb-4 hover:text-emerald-900 transition-colors">${b.title || 'Untitled Bill'}</h2>
                     <div class="space-y-4">
                         <div>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Provision Summary</p>
-                            <p class="text-slate-600 text-sm leading-relaxed line-clamp-3">${b.summary}</p>
+                            <p class="text-slate-600 text-sm leading-relaxed line-clamp-3">${b.summary || 'No summary available.'}</p>
                         </div>
                         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                             <p class="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Public Impact</p>
-                            <p class="text-emerald-950 text-xs font-bold italic">"${b.impact}"</p>
+                            <p class="text-emerald-950 text-xs font-bold italic">"${b.impact || 'Information pending...'}"</p>
                         </div>
                     </div>
                 </div>
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-black text-slate-400 uppercase">${b.year} Fiscal</span>
-                        <span class="text-xs font-black text-slate-900">${b.cat}</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase">${b.year || '2024'} Fiscal</span>
+                        <span class="text-xs font-black text-slate-900">${b.cat || 'General'}</span>
                     </div>
                     <button class="bg-slate-900 text-white text-[10px] font-black px-5 py-3 rounded-xl hover:bg-emerald-900 transition-all shadow-md">VIEW DOCUMENT</button>
                 </div>
@@ -124,18 +129,30 @@
     }
 
     function filterData() {
-        const s = document.getElementById('searchInput').value.toLowerCase();
-        const y = document.getElementById('yearFilter').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const selectedYear = document.getElementById('yearFilter').value;
+        
         const results = allBills.filter(b => {
-            const matchS = (b.title?.toLowerCase().includes(s)) || (b.summary?.toLowerCase().includes(s));
-            const matchY = y === "All" || b.year == y;
-            return matchS && matchY;
+            const title = (b.title || "").toLowerCase();
+            const summary = (b.summary || "").toLowerCase();
+            const category = (b.cat || "").toLowerCase();
+            
+            const matchesSearch = title.includes(searchTerm) || 
+                                 summary.includes(searchTerm) || 
+                                 category.includes(searchTerm);
+                                 
+            const matchesYear = (selectedYear === "All") || (String(b.year) === selectedYear);
+            
+            return matchesSearch && matchesYear;
         });
+        
         render(results);
     }
 
+    // Attach listeners inside the module
     document.getElementById('searchInput').addEventListener('input', filterData);
     document.getElementById('yearFilter').addEventListener('change', filterData);
 </script>
 </body>
 </html>
+
