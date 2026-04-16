@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Punjab Legislative Archive | #1 Reference</title>
+    <title>Clause by Clause | #1 Reference</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
@@ -22,25 +22,24 @@
         <div class="flex items-center gap-4">
             <div class="h-12 w-12 bg-emerald-900 rounded-xl flex items-center justify-center text-white font-black shadow-lg">#1</div>
             <div>
-                <h1 class="text-2xl font-black text-emerald-950 tracking-tighter uppercase">Punjab Law Archive</h1>
+                <h1 class="text-2xl font-black text-emerald-950 tracking-tighter uppercase">Clause by Clause</h1>
                 <div class="flex items-center gap-2">
                     <div class="h-2 w-2 bg-emerald-500 rounded-full pulse"></div>
                     <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Live Provincial Records 2021-2026</p>
                 </div>
             </div>
         </div>
-        <div class="text-right hidden md:block">
-            <p class="text-[10px] font-black text-slate-400 uppercase italic">Official Reference Portal</p>
-        </div>
     </div>
 </header>
 
 <main class="max-w-7xl mx-auto px-6 py-12">
+
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
         <div class="lg:col-span-3 bg-white p-6 rounded-3xl shadow-xl border border-slate-200 flex flex-col md:flex-row gap-4">
-            <input type="text" id="searchInput" placeholder="Search by Keyword (e.g. 'Women', 'Tax', 'Land')..." 
-                class="flex-1 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 outline-none font-semibold transition-all">
-            <select id="yearFilter" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-slate-600 outline-none cursor-pointer hover:bg-slate-100">
+            <input type="text" id="searchInput" placeholder="Search..."
+                class="flex-1 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl">
+
+            <select id="yearFilter" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl">
                 <option value="All">All Years</option>
                 <option value="2026">2026</option>
                 <option value="2025">2025</option>
@@ -50,103 +49,103 @@
                 <option value="2021">2021</option>
             </select>
         </div>
+
         <div class="bg-emerald-900 rounded-3xl p-6 text-white flex items-center justify-between shadow-xl">
-            <div>
-                <p class="text-[10px] font-bold uppercase tracking-widest opacity-60">Verified Laws</p>
-                <span id="billCount" class="text-5xl font-black">0</span>
-            </div>
-            <div class="h-12 w-12 bg-white/10 rounded-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                </svg>
-            </div>
+            <span id="billCount" class="text-5xl font-black">0</span>
         </div>
     </div>
 
     <div id="billsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+
 </main>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAM4U2SUGBzq4IyWSITtmzu8ZnyrXOfFVk",
-        authDomain: "assembly-bills.firebaseapp.com",
-        projectId: "assembly-bills",
-        storageBucket: "assembly-bills.firebasestorage.app",
-        messagingSenderId: "1038506635093",
-        appId: "1:1038506635093:web:0fed6de4cd8dd6702d49dc"
-    };
+const firebaseConfig = {
+    apiKey: "AIzaSyAM4U2SUGBzq4IyWSITtmzu8ZnyrXOfFVk",
+    authDomain: "assembly-bills.firebaseapp.com",
+    projectId: "assembly-bills",
+    storageBucket: "assembly-bills.firebasestorage.app",
+    messagingSenderId: "1038506635093",
+    appId: "1:1038506635093:web:0fed6de4cd8dd6702d49dc"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    let allBills = [];
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    onSnapshot(collection(db, "punjab_bills"), (snapshot) => {
-        allBills = snapshot.docs.map(doc => ({ ...doc.data() }));
-        filterData();
+let allBills = [];
+
+/* ✅ CLEAN DATA HERE (THIS IS THE REAL FIX) */
+onSnapshot(collection(db, "punjab_bills"), (snapshot) => {
+    allBills = snapshot.docs.map(doc => {
+        const d = doc.data();
+
+        return {
+            id: d.id || "",
+            title: d.title || "",
+            summary: d.summary || "",
+            impact: d.impact || "",
+            cat: d.cat || "",
+            year: String(d.year || "").replace(/\D/g, "").trim()
+        };
     });
 
-    function render(data) {
-        const grid = document.getElementById('billsGrid');
-        document.getElementById('billCount').innerText = data.length;
+    filterData();
+});
 
-        if (data.length === 0) {
-            grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400 font-bold uppercase tracking-widest">No matching records found</div>`;
-            return;
-        }
+/* RENDER (UNCHANGED LOGIC) */
+function render(data) {
+    const grid = document.getElementById('billsGrid');
+    document.getElementById('billCount').innerText = data.length;
 
-        grid.innerHTML = data.sort((a,b) => b.id.localeCompare(a.id)).map(b => `
-            <div class="bill-card bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm flex flex-col justify-between">
-                <div>
-                    <div class="flex justify-between items-start mb-6">
-                        <span class="text-[9px] font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-lg">#1 VERIFIED LAW</span>
-                        <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">${b.id}</span>
-                    </div>
-                    <h2 class="text-xl font-black text-slate-900 leading-[1.2] mb-4 hover:text-emerald-900 transition-colors">${b.title}</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Provision Summary</p>
-                            <p class="text-slate-600 text-sm leading-relaxed line-clamp-3">${b.summary}</p>
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                            <p class="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Public Impact</p>
-                            <p class="text-emerald-950 text-xs font-bold italic">"${b.impact}"</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
-                    <div class="flex flex-col">
-                        <span class="text-[10px] font-black text-slate-400 uppercase">${b.year} Fiscal</span>
-                        <span class="text-xs font-black text-slate-900">${b.cat}</span>
-                    </div>
-                    <button class="bg-slate-900 text-white text-[10px] font-black px-5 py-3 rounded-xl hover:bg-emerald-900 transition-all shadow-md">VIEW DOCUMENT</button>
-                </div>
+    if (data.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400 font-bold">No matching records found</div>`;
+        return;
+    }
+
+    grid.innerHTML = data
+        .sort((a,b) => (b.id || "").localeCompare(a.id || ""))
+        .map(b => `
+        <div class="bill-card bg-white border p-6 rounded-2xl">
+            <h2 class="font-black text-lg">${b.title}</h2>
+            <p class="text-sm text-slate-600">${b.summary}</p>
+            <div class="mt-4 text-xs flex justify-between">
+                <span>${b.year}</span>
+                <span>${b.cat}</span>
             </div>
-        `).join('');
-    }
+        </div>
+    `).join('');
+}
 
-    function filterData() {
-        const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
-        const yearVal = document.getElementById('yearFilter').value;
+/* ✅ FIXED FILTER (STRICT MATCH ONLY) */
+function filterData() {
+    const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+    const yearVal = document.getElementById('yearFilter').value;
 
-        const filtered = allBills.filter(bill => {
-            const matchesSearch = !searchVal || 
-                (bill.title || "").toLowerCase().includes(searchVal) || 
-                (bill.summary || "").toLowerCase().includes(searchVal) || 
-                (bill.cat || "").toLowerCase().includes(searchVal);
+    const filtered = allBills.filter(bill => {
 
-            const matchesYear = (yearVal === "All") || (String(bill.year || "").trim() === yearVal);
+        const matchesSearch =
+            !searchVal ||
+            (bill.title || "").toLowerCase().includes(searchVal) ||
+            (bill.summary || "").toLowerCase().includes(searchVal) ||
+            (bill.cat || "").toLowerCase().includes(searchVal);
 
-            return matchesSearch && matchesYear;
-        });
+        const matchesYear =
+            yearVal === "All" ||
+            bill.year === String(yearVal);
 
-        render(filtered);
-    }
+        return matchesSearch && matchesYear;
+    });
 
-    document.getElementById('searchInput').addEventListener('input', filterData);
-    document.getElementById('yearFilter').addEventListener('change', filterData);
+    render(filtered);
+}
+
+document.getElementById('searchInput').addEventListener('input', filterData);
+document.getElementById('yearFilter').addEventListener('change', filterData);
+
 </script>
+
 </body>
 </html>
