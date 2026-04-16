@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -83,7 +83,6 @@
     const db = getFirestore(app);
     let allBills = [];
 
-    // Real-time listener
     onSnapshot(collection(db, "punjab_bills"), (snapshot) => {
         allBills = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         filterData();
@@ -129,30 +128,28 @@
     }
 
     function filterData() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const selectedYear = document.getElementById('yearFilter').value;
+        const s = document.getElementById('searchInput').value.toLowerCase().trim();
+        const y = document.getElementById('yearFilter').value;
         
         const results = allBills.filter(b => {
-            const title = (b.title || "").toLowerCase();
-            const summary = (b.summary || "").toLowerCase();
-            const category = (b.cat || "").toLowerCase();
+            // Force year comparison to be absolute strings
+            const billYear = String(b.year).trim();
+            const selectedYear = String(y).trim();
             
-            const matchesSearch = title.includes(searchTerm) || 
-                                 summary.includes(searchTerm) || 
-                                 category.includes(searchTerm);
-                                 
-            const matchesYear = (selectedYear === "All") || (String(b.year) === selectedYear);
+            const matchS = (b.title || "").toLowerCase().includes(s) || 
+                          (b.summary || "").toLowerCase().includes(s) ||
+                          (b.cat || "").toLowerCase().includes(s);
             
-            return matchesSearch && matchesYear;
+            const matchY = selectedYear === "All" || billYear === selectedYear;
+            
+            return matchS && matchY;
         });
         
         render(results);
     }
 
-    // Attach listeners inside the module
     document.getElementById('searchInput').addEventListener('input', filterData);
     document.getElementById('yearFilter').addEventListener('change', filterData);
 </script>
 </body>
 </html>
-
