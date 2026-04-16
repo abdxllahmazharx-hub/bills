@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -84,7 +84,7 @@
     let allBills = [];
 
     onSnapshot(collection(db, "punjab_bills"), (snapshot) => {
-        allBills = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        allBills = snapshot.docs.map(doc => ({ ...doc.data() }));
         filterData();
     });
 
@@ -97,29 +97,29 @@
             return;
         }
 
-        grid.innerHTML = data.sort((a,b) => (b.year || 0) - (a.year || 0)).map(b => `
+        grid.innerHTML = data.sort((a,b) => b.id.localeCompare(a.id)).map(b => `
             <div class="bill-card bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm flex flex-col justify-between">
                 <div>
                     <div class="flex justify-between items-start mb-6">
                         <span class="text-[9px] font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-lg">#1 VERIFIED LAW</span>
-                        <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">${b.id || 'N/A'}</span>
+                        <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">${b.id}</span>
                     </div>
-                    <h2 class="text-xl font-black text-slate-900 leading-[1.2] mb-4 hover:text-emerald-900 transition-colors">${b.title || 'Untitled Bill'}</h2>
+                    <h2 class="text-xl font-black text-slate-900 leading-[1.2] mb-4 hover:text-emerald-900 transition-colors">${b.title}</h2>
                     <div class="space-y-4">
                         <div>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Provision Summary</p>
-                            <p class="text-slate-600 text-sm leading-relaxed line-clamp-3">${b.summary || 'No summary available.'}</p>
+                            <p class="text-slate-600 text-sm leading-relaxed line-clamp-3">${b.summary}</p>
                         </div>
                         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                             <p class="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Public Impact</p>
-                            <p class="text-emerald-950 text-xs font-bold italic">"${b.impact || 'Information pending...'}"</p>
+                            <p class="text-emerald-950 text-xs font-bold italic">"${b.impact}"</p>
                         </div>
                     </div>
                 </div>
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-black text-slate-400 uppercase">${b.year || '2024'} Fiscal</span>
-                        <span class="text-xs font-black text-slate-900">${b.cat || 'General'}</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase">${b.year} Fiscal</span>
+                        <span class="text-xs font-black text-slate-900">${b.cat}</span>
                     </div>
                     <button class="bg-slate-900 text-white text-[10px] font-black px-5 py-3 rounded-xl hover:bg-emerald-900 transition-all shadow-md">VIEW DOCUMENT</button>
                 </div>
@@ -128,24 +128,23 @@
     }
 
     function filterData() {
-        const s = document.getElementById('searchInput').value.toLowerCase().trim();
-        const y = document.getElementById('yearFilter').value;
-        
-        const results = allBills.filter(b => {
-            // Force year comparison to be absolute strings
-            const billYear = String(b.year).trim();
-            const selectedYear = String(y).trim();
-            
-            const matchS = (b.title || "").toLowerCase().includes(s) || 
-                          (b.summary || "").toLowerCase().includes(s) ||
-                          (b.cat || "").toLowerCase().includes(s);
-            
-            const matchY = selectedYear === "All" || billYear === selectedYear;
-            
-            return matchS && matchY;
+        const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+        const yearVal = document.getElementById('yearFilter').value;
+
+        const filtered = allBills.filter(bill => {
+            // Check keyword match
+            const matchesSearch = !searchVal || 
+                bill.title.toLowerCase().includes(searchVal) || 
+                bill.summary.toLowerCase().includes(searchVal) || 
+                bill.cat.toLowerCase().includes(searchVal);
+
+            // Check Year match - forcing string comparison
+            const matchesYear = (yearVal === "All") || (String(bill.year).trim() === String(yearVal).trim());
+
+            return matchesSearch && matchesYear;
         });
-        
-        render(results);
+
+        render(filtered);
     }
 
     document.getElementById('searchInput').addEventListener('input', filterData);
