@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -91,7 +91,7 @@
     function render(data) {
         const grid = document.getElementById('billsGrid');
         document.getElementById('billCount').innerText = data.length;
-        
+
         if (data.length === 0) {
             grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400 font-bold uppercase tracking-widest">No matching records found</div>`;
             return;
@@ -132,14 +132,15 @@
         const yearVal = document.getElementById('yearFilter').value;
 
         const filtered = allBills.filter(bill => {
-            // Check keyword match
             const matchesSearch = !searchVal || 
-                bill.title.toLowerCase().includes(searchVal) || 
-                bill.summary.toLowerCase().includes(searchVal) || 
-                bill.cat.toLowerCase().includes(searchVal);
+                (bill.title || "").toLowerCase().includes(searchVal) || 
+                (bill.summary || "").toLowerCase().includes(searchVal) || 
+                (bill.cat || "").toLowerCase().includes(searchVal);
 
-            // Check Year match - forcing string comparison
-            const matchesYear = (yearVal === "All") || (String(bill.year).trim() === String(yearVal).trim());
+            const billYear = parseInt(bill.year);
+            const selectedYear = parseInt(yearVal);
+
+            const matchesYear = (yearVal === "All") || (!isNaN(billYear) && billYear === selectedYear);
 
             return matchesSearch && matchesYear;
         });
