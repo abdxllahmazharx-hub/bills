@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -137,10 +137,7 @@
                 (bill.summary || "").toLowerCase().includes(searchVal) || 
                 (bill.cat || "").toLowerCase().includes(searchVal);
 
-            const billYear = parseInt(bill.year);
-            const selectedYear = parseInt(yearVal);
-
-            const matchesYear = (yearVal === "All") || (!isNaN(billYear) && billYear === selectedYear);
+            const matchesYear = (yearVal === "All") || (String(bill.year || "").trim() === yearVal);
 
             return matchesSearch && matchesYear;
         });
