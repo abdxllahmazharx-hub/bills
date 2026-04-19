@@ -33,6 +33,13 @@
 </header>
 
 <main class="max-w-7xl mx-auto px-6 py-12">
+
+    <div class="mb-12 rounded-3xl overflow-hidden shadow-2xl h-64 relative">
+        <img src="https://images.unsplash.com/photo-1541974635327-030997193b2a?q=80&w=2000&auto=format&fit=crop" class="w-full h-full object-cover" alt="Legislative Hall">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8">
+            <h2 class="text-white text-4xl font-black">Punjab Legislative Insights</h2>
+        </div>
+    </div>
     
     <section class="mb-12 bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
         <h2 class="text-3xl font-black text-emerald-950 mb-4">The Punjab Assembly</h2>
@@ -41,15 +48,14 @@
                 The Provincial Assembly of the Punjab is the legislative heart of the province. Here, elected representatives debate, draft, and pass the laws that shape our daily lives. From public infrastructure to educational reforms, the decisions made within these chambers represent the democratic will of the people of Punjab. This portal tracks those legislative movements, clause by clause.
             </p>
             <div class="rounded-2xl overflow-hidden bg-slate-200 h-48 flex items-center justify-center border-4 border-emerald-900">
-                <img src="https://images.unsplash.com/photo-1596495574632-47e909569736?q=80&w=800&auto=format&fit=crop" 
-                     alt="Punjab Assembly" class="w-full h-full object-cover">
+                <img src="https://images.unsplash.com/photo-1596495574632-47e909569736?q=80&w=800&auto=format&fit=crop" alt="Punjab Assembly" class="w-full h-full object-cover">
             </div>
         </div>
     </section>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
         <div class="lg:col-span-3 bg-white p-6 rounded-3xl shadow-xl border border-slate-200 flex flex-col md:flex-row gap-4">
-            <input type="text" id="searchInput" placeholder="Search..."
+            <input type="text" id="searchInput" placeholder="Search bills..."
                 class="flex-1 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl">
 
             <select id="yearFilter" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl">
@@ -90,7 +96,6 @@ const db = getFirestore(app);
 
 let allBills = [];
 
-/* ✅ CLEAN DATA HERE (THIS IS THE REAL FIX) */
 onSnapshot(collection(db, "punjab_bills"), (snapshot) => {
     allBills = snapshot.docs.map(doc => {
         const d = doc.data();
@@ -108,7 +113,6 @@ onSnapshot(collection(db, "punjab_bills"), (snapshot) => {
     filterData();
 });
 
-/* RENDER (UNCHANGED LOGIC) */
 function render(data) {
     const grid = document.getElementById('billsGrid');
     document.getElementById('billCount').innerText = data.length;
@@ -121,24 +125,25 @@ function render(data) {
     grid.innerHTML = data
         .sort((a,b) => (b.id || "").localeCompare(a.id || ""))
         .map(b => `
-        <div class="bill-card bg-white border p-6 rounded-2xl">
-            <h2 class="font-black text-lg">${b.title}</h2>
-            <p class="text-sm text-slate-600">${b.summary}</p>
-            <div class="mt-4 text-xs flex justify-between">
+        <div class="bill-card bg-white border p-6 rounded-2xl flex flex-col justify-between">
+            <div>
+                <h2 class="font-black text-lg mb-2">${b.title}</h2>
+                <p class="text-sm text-slate-600 mb-4">${b.summary}</p>
+                <p class="text-xs font-semibold text-emerald-700 italic border-l-2 border-emerald-500 pl-2">Impact: ${b.impact || "Standard legislative process"}</p>
+            </div>
+            <div class="mt-6 text-xs flex justify-between items-center text-slate-400 font-bold uppercase tracking-wider">
                 <span>${b.year}</span>
-                <span>${b.cat}</span>
+                <span class="bg-slate-100 px-3 py-1 rounded-full">${b.cat}</span>
             </div>
         </div>
     `).join('');
 }
 
-/* ✅ FIXED FILTER (STRICT MATCH ONLY) */
 function filterData() {
     const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
     const yearVal = document.getElementById('yearFilter').value;
 
     const filtered = allBills.filter(bill => {
-
         const matchesSearch =
             !searchVal ||
             (bill.title || "").toLowerCase().includes(searchVal) ||
