@@ -77,10 +77,15 @@ onSnapshot(collection(db, "punjab_bills"), (snapshot) => {
 function render(data) {
     const grid = document.getElementById('billsGrid');
     document.getElementById('billCount').innerText = data.length;
+    
     grid.innerHTML = data.map(b => `
-        <div class="bill-card bg-white border border-slate-100 p-8 rounded-3xl shadow-sm hover:shadow-xl">
+        <div class="bill-card bg-white border border-slate-100 p-8 rounded-3xl shadow-sm hover:shadow-xl flex flex-col">
             <h2 class="font-black text-2xl mb-4 text-emerald-950">${b.title}</h2>
-            <p class="text-slate-500 text-sm mb-6 flex-grow">${(b.summary || "").substring(0, 120)}...</p>
+            
+            <p class="text-slate-600 text-sm mb-6 flex-grow leading-relaxed italic border-l-4 border-emerald-500 pl-4">
+                ${b.summary || "No summary provided."}
+            </p>
+            
             <a href="bill-detail.html?id=${b.firestoreId}" class="bg-emerald-900 text-white text-center font-black py-3 rounded-xl uppercase tracking-widest text-xs hover:bg-emerald-700 transition">View Full Clause</a>
         </div>
     `).join('');
