@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+#login-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+}
+#admin-content {
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.3s;
+}
+.visible {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+</style>
+</head>
+
+<body class="bg-slate-100 p-10">
+
+<!-- LOGIN -->
+<div id="login-overlay">
+    <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
+        <h2 class="font-black text-2xl mb-6 uppercase">Login</h2>
+        <input type="password" id="passInput" placeholder="enter password"
+            class="w-full p-4 border rounded-xl mb-4 text-center">
+
+        <button id="loginBtn"
+            class="w-full bg-emerald-900 text-white py-4 rounded-xl font-bold hover:bg-emerald-800 uppercase">
+            Enter
+        </button>
+    </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-content" class="max-w-5xl mx-auto">
+    <h1 class="text-3xl font-black mb-10">Manage Bills</h1>
+
+    <div class="bg-white p-8 rounded-3xl shadow-lg mb-10">
+        <input type="hidden" id="editId">
+
+        <div class="grid grid-cols-2 gap-4">
+            <input id="bid" placeholder="bill id" class="p-4 border rounded-xl">
+            <input id="byear" type="number" placeholder="year" class="p-4 border rounded-xl">
+        </div>
+
+        <input id="btitle" placeholder="title" class="w-full p-4 mt-4 border rounded-xl">
+        <textarea id="bsum" placeholder="summary" class="w-full p-4 mt-4 border rounded-xl"></textarea>
+        <textarea id="bimp" placeholder="impact" class="w-full p-4 mt-4 border rounded-xl"></textarea>
+
+        <button id="saveBtn"
+            class="w-full bg-emerald-900 text-white py-4 mt-4 rounded-xl font-bold">
+            Save
+        </button>
+    </div>
+
+    <div id="list"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+    getFirestore, collection, addDoc, onSnapshot,
+    deleteDoc, doc, updateDoc, getDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* ---------------- LOGIN FIX ---------------- */
+const loginBtn = document.getElementById("loginBtn");
+const passInput = document.getElementById("passInput");
+
+loginBtn.addEventListener("click", checkLogin);
+passInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") checkLogin();
+});
+
+function checkLogin() {
+    const pass = passInput.value.trim();
+
+    if (pass === "clausebyclause2026") {
+        document.getElementById("login-overlay").style.display = "none";
+        document.getElementById("admin-content").classList.add("visible");
+    } else {
+        alert("Wrong password");
+        passInput.value = "";
+    }
+}
+
+/* ---------------- FIREBASE ---------------- */
+const app = initializeApp({
+    apiKey: "AIzaSyAM4U2SUGBzq4IyWSITtmzu8ZnyrXOfFVk",
+    projectId: "assembly-bills"
+});
+
+const db = getFirestore(app);
+const billsCol = collection(db, "punjab_bills");
+
+/* ---------------- LISTENER ---------------- */
+onSnapshot(billsCol, (snap) => {
+    const list = document.getElementById("list");
+
+    list.innerHTML = snap.docs.map(d => {
+        const data = d.data();
+
+        return `
+        <div class="bg-white p-6 rounded-xl shadow mb-3 flex justify-between">
+            <div>${data.title}</div>
+            <div class="space-x-2">
+                <button onclick="edit('${d.id}')" class="bg-blue-500 text-white px-3 py-1 rounded">Edit</button>
+                <button onclick="del('${d.id}')" class="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+            </div>
+        </div>`;
+    }).join("");
+});
+
+/* ---------------- SAVE ---------------- */
+document.getElementById("saveBtn").onclick = async () => {
+    const editId = document.getElementById("editId").value;
+
+    const data = {
+        id: document.getElementById("bid").value,
+        year: document.getElementById("byear").value,
+        title: document.getElementById("btitle").value,
+        summary: document.getElementById("bsum").value,
+        impact: document.getElementById("bimp").value
+    };
+
+    if (editId) {
+        await updateDoc(doc(db, "punjab_bills", editId), data);
+        alert("Updated");
+    } else {
+        await addDoc(billsCol, data);
+        alert("Saved");
+    }
+
+    document.getElementById("editId").value = "";
+};
+
+/* ---------------- GLOBAL FUNCS ---------------- */
+window.edit = async (id) => {
+    const snap = await getDoc(doc(db, "punjab_bills", id));
+    if (snap.exists()) {
+        const d = snap.data();
+        document.getElementById("editId").value = id;
+        document.getElementById("bid").value = d.id || "";
+        document.getElementById("byear").value = d.year || "";
+        document.getElementById("btitle").value = d.title || "";
+        document.getElementById("bsum").value = d.summary || "";
+        document.getElementById("bimp").value = d.impact || "";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+};
+
+window.del = async (id) => {
+    if (confirm("Delete?")) {
+        await deleteDoc(doc(db, "punjab_bills", id));
+    }
+};
+</script>
+
+</body>
+</html>
